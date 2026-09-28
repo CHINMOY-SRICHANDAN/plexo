@@ -11,6 +11,7 @@ import { DownloadingScreen } from './screens/DownloadingScreen'
 import { ErrorScreen } from './screens/ErrorScreen'
 import { IdleScreen } from './screens/IdleScreen'
 import { NoConnectionsScreen } from './screens/NoConnectionsScreen'
+import { ProxyScreen } from './screens/ProxyScreen'
 import { useAppStore } from './store/useAppStore'
 
 function assertNever(status: never): never {
@@ -79,13 +80,19 @@ function App(): React.JSX.Element {
   const loadThemeSource = useAppStore((store) => store.loadThemeSource)
   const loadInitialPaths = useAppStore((store) => store.loadInitialPaths)
   const checkForUpdate = useAppStore((store) => store.checkForUpdate)
+  const activeTab = useAppStore((store) => store.activeTab)
+  const initProxyListener = useAppStore((store) => store.initProxyListener)
 
   useEffect(() => {
     loadNetworkPreferences()
     loadThemeSource()
     loadInitialPaths()
     checkForUpdate()
-  }, [loadNetworkPreferences, loadThemeSource, loadInitialPaths, checkForUpdate])
+    const cleanupProxy = initProxyListener()
+    return () => {
+      cleanupProxy()
+    }
+  }, [loadNetworkPreferences, loadThemeSource, loadInitialPaths, checkForUpdate, initProxyListener])
 
   const handleNewDownload = (): void => {
     if (currentDownload) void window.plexo.removeDownload(currentDownload.id)
@@ -106,7 +113,10 @@ function App(): React.JSX.Element {
   let screen: React.JSX.Element
   let titleBarStatus: TitleBarStatus = { kind: 'none' }
 
-  if (currentDownload) {
+  if (activeTab === 'proxy') {
+    screen = <ProxyScreen />
+    titleBarStatus = { kind: 'none' }
+  } else if (currentDownload) {
     ;({ screen, titleBarStatus } = renderDownload(currentDownload, {
       onNewDownload: handleNewDownload,
       onDownloadAgain: handleDownloadAgain

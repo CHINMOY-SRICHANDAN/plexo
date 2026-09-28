@@ -24,5 +24,10 @@ export const IpcChannels = {
   downloadUpdated: 'download:updated',
   toggleDevToolsPanel: 'dev:toggle-panel',
   checkForUpdate: 'update:check',
-  dismissUpdate: 'update:dismiss'
+  dismissUpdate: 'update:dismiss',
+  startProxy: 'proxy:start',
+  stopProxy: 'proxy:stop',
+  getProxyStatus: 'proxy:get-status',
+  setSystemProxy: 'proxy:set-system-proxy',
+  proxyUpdated: 'proxy:updated'
 } as const

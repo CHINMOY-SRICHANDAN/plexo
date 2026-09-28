@@ -26,6 +26,7 @@ import {
 } from '../settings'
 import { testKnobs } from '../testKnobs'
 import { checkForUpdate, UPDATE_PAGE_URL } from '../updateCheck'
+import { proxyServerManager } from '../proxy/proxyServer'
 
 async function openNetworkSettings(): Promise<void> {
   if (process.platform === 'win32') {
@@ -184,6 +185,31 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null): Down
 
   handle('dismissUpdate', async (_event, version) => {
     await saveDismissedUpdateVersion(version)
+  })
+
+  // Multi-network proxy server handlers
+  proxyServerManager.setTelemetryCallback((status) => {
+    const win = getWindow()
+    if (win && !win.isDestroyed()) {
+      win.webContents.send(IpcChannels.proxyUpdated, status)
+    }
+  })
+
+  handle('startProxy', async (_event, config) => {
+    const ifaces = await refreshInterfaces()
+    return proxyServerManager.start(config, ifaces)
+  })
+
+  handle('stopProxy', async () => {
+    await proxyServerManager.stop()
+  })
+
+  handle('getProxyStatus', async () => {
+    return proxyServerManager.getStatus()
+  })
+
+  handle('setSystemProxy', async (_event, enable) => {
+    return proxyServerManager.setSystemProxy(enable)
   })
 
   return manager

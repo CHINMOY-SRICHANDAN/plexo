@@ -176,3 +176,54 @@ export interface StartDownloadRequest {
   lastModified: string | null
   isTorrent?: boolean
 }
+
+export type ProxyAlgorithm = 'round-robin' | 'least-connections' | 'ip-hash'
+
+export interface ProxyConfig {
+  httpPort: number
+  socksPort: number
+  selectedInterfaceIds: string[]
+  algorithm: ProxyAlgorithm
+  sessionAffinity: boolean
+}
+
+export interface ProxyInterfaceStats {
+  interfaceId: string
+  interfaceLabel: string
+  interfaceKind: NetworkInterfaceKind
+  address: string
+  bytesUp: number
+  bytesDown: number
+  speedBytesPerSecUp: number
+  speedBytesPerSecDown: number
+  activeConnections: number
+}
+
+export interface ProxyConnectionEntry {
+  id: string
+  targetHost: string
+  targetPort: number
+  protocol: 'HTTP' | 'HTTPS_CONNECT' | 'SOCKS5'
+  interfaceId: string
+  interfaceLabel: string
+  interfaceKind: NetworkInterfaceKind
+  bytesUp: number
+  bytesDown: number
+  speedBytesPerSec: number
+  startedAt: number
+}
+
+export interface ProxyStatus {
+  running: boolean
+  httpPort: number
+  socksPort: number
+  systemProxyEnabled: boolean
+  activeConnections: number
+  totalBytesUp: number
+  totalBytesDown: number
+  speedBytesPerSecUp: number
+  speedBytesPerSecDown: number
+  interfaces: ProxyInterfaceStats[]
+  recentConnections: ProxyConnectionEntry[]
+  error?: string
+}

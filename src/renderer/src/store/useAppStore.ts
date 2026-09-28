@@ -3,6 +3,8 @@ import type {
   NetworkInterfaceInfo,
   NetworkPreference,
   NetworkPreferences,
+  ProxyConfig,
+  ProxyStatus,
   ThemeSource,
   UpdateInfo
 } from '@shared/types'
@@ -53,6 +55,19 @@ interface AppStore {
   draftUrl: string
   draftDestinationDir: string
 
+  /** Active UI tab: Downloader or Proxy Server */
+  activeTab: 'downloader' | 'proxy'
+  proxyStatus: ProxyStatus | null
+  proxyConfig: ProxyConfig
+
+  setActiveTab: (tab: 'downloader' | 'proxy') => void
+  setProxyConfig: (patch: Partial<ProxyConfig>) => void
+  startProxy: () => Promise<void>
+  stopProxy: () => Promise<void>
+  toggleSystemProxy: (enable: boolean) => Promise<void>
+  fetchProxyStatus: () => Promise<void>
+  initProxyListener: () => () => void
+
   loadInterfaces: () => Promise<void>
   refreshLatencies: () => Promise<void>
   loadInitialPaths: () => Promise<void>
@@ -89,6 +104,66 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   draftUrl: '',
   draftDestinationDir: '',
+
+  activeTab: 'downloader',
+  proxyStatus: null,
+  proxyConfig: {
+    httpPort: 8888,
+    socksPort: 1080,
+    selectedInterfaceIds: [],
+    algorithm: 'round-robin',
+    sessionAffinity: true
+  },
+
+  setActiveTab: (activeTab) => set({ activeTab }),
+
+  setProxyConfig: (patch) => set((state) => ({ proxyConfig: { ...state.proxyConfig, ...patch } })),
+
+  startProxy: async () => {
+    try {
+      const config = get().proxyConfig
+      const status = await window.plexo.startProxy(config)
+      set({ proxyStatus: status })
+    } catch (err) {
+      console.error('[AppStore] Failed to start proxy:', err)
+    }
+  },
+
+  stopProxy: async () => {
+    try {
+      await window.plexo.stopProxy()
+      const status = await window.plexo.getProxyStatus()
+      set({ proxyStatus: status })
+    } catch (err) {
+      console.error('[AppStore] Failed to stop proxy:', err)
+    }
+  },
+
+  toggleSystemProxy: async (enable) => {
+    try {
+      await window.plexo.setSystemProxy(enable)
+      const status = await window.plexo.getProxyStatus()
+      set({ proxyStatus: status })
+    } catch (err) {
+      console.error('[AppStore] Failed to toggle system proxy:', err)
+    }
+  },
+
+  fetchProxyStatus: async () => {
+    try {
+      const status = await window.plexo.getProxyStatus()
+      set({ proxyStatus: status })
+    } catch (err) {
+      console.error('[AppStore] Failed to get proxy status:', err)
+    }
+  },
+
+  initProxyListener: () => {
+    void get().fetchProxyStatus()
+    return window.plexo.onProxyUpdated((status) => {
+      set({ proxyStatus: status })
+    })
+  },
 
   loadInterfaces: async () => {
     // A re-scan keeps showing the last result. Dropping back to 'loading' would swap App off the

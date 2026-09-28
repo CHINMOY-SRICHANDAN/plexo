@@ -8,7 +8,9 @@ import type {
   StartDownloadRequest,
   StartSimulatedDownloadRequest,
   ThemeSource,
-  UpdateInfo
+  UpdateInfo,
+  ProxyConfig,
+  ProxyStatus
 } from './types'
 
 /** The request/response half of the IPC surface (every IpcChannels entry except the two
@@ -43,4 +45,8 @@ export interface IpcContract {
   removeDownload: { args: [id: string]; result: void }
   checkForUpdate: { args: []; result: UpdateInfo | null }
   dismissUpdate: { args: [version: string]; result: void }
+  startProxy: { args: [config: Partial<ProxyConfig>]; result: ProxyStatus }
+  stopProxy: { args: []; result: void }
+  getProxyStatus: { args: []; result: ProxyStatus }
+  setSystemProxy: { args: [enable: boolean]; result: boolean }
 }

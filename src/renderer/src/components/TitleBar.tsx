@@ -1,6 +1,9 @@
 import { ColorBadge } from './ColorBadge'
 import { ThemeToggle } from './ThemeToggle'
 import { UpdateIndicator } from './UpdateIndicator'
+import { useAppStore } from '../store/useAppStore'
+import { ArrowDownToLine, Radio } from 'lucide-react'
+import { cn } from 'cn'
 
 export type TitleBarStatus =
   | { kind: 'none' }
@@ -17,6 +20,9 @@ const pillDotClass = 'size-1.5 shrink-0 rounded-full'
 
 export function TitleBar({ status }: { status: TitleBarStatus }): React.JSX.Element {
   const dimmed = status.kind === 'offline'
+  const activeTab = useAppStore((state) => state.activeTab)
+  const setActiveTab = useAppStore((state) => state.setActiveTab)
+  const proxyStatus = useAppStore((state) => state.proxyStatus)
 
   return (
     <div
@@ -34,6 +40,40 @@ export function TitleBar({ status }: { status: TitleBarStatus }): React.JSX.Elem
       >
         Plexo
       </div>
+
+      {/* Mode switcher tabs */}
+      <div className="flex items-center rounded-md bg-[var(--input-bg)] p-0.5 border border-border/60 [-webkit-app-region:no-drag]">
+        <button
+          type="button"
+          onClick={() => setActiveTab('downloader')}
+          className={cn(
+            'flex items-center gap-1.5 rounded-[4px] px-2.5 py-1 font-mono text-[11px] font-medium transition-all cursor-pointer',
+            activeTab === 'downloader'
+              ? 'bg-background text-foreground shadow-xs font-semibold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <ArrowDownToLine className="size-3 text-muted-foreground" />
+          <span>Downloader</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('proxy')}
+          className={cn(
+            'flex items-center gap-1.5 rounded-[4px] px-2.5 py-1 font-mono text-[11px] font-medium transition-all cursor-pointer',
+            activeTab === 'proxy'
+              ? 'bg-background text-foreground shadow-xs font-semibold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <Radio className="size-3 text-muted-foreground" />
+          <span>Proxy Server</span>
+          {proxyStatus?.running && (
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          )}
+        </button>
+      </div>
+
       <div className="flex-1" />
       {status.kind === 'combined' && (
         <ColorBadge

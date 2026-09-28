@@ -1,7 +1,13 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IpcChannels } from '../shared/ipc-channels'
 import type { IpcContract } from '../shared/ipc-contract'
-import type { DownloadState, NetworkPreference, ThemeSource } from '../shared/types'
+import type {
+  DownloadState,
+  NetworkPreference,
+  ThemeSource,
+  ProxyConfig,
+  ProxyStatus
+} from '../shared/types'
 
 /** Typed wrapper around ipcRenderer.invoke — the channel name picks its args/result shape out of
  * IpcContract, so a call here that doesn't match what registerIpcHandlers (main) actually handles
@@ -43,11 +49,21 @@ const plexoApi = {
   removeDownload: (downloadId: string) => invoke('removeDownload', downloadId),
   checkForUpdate: () => invoke('checkForUpdate'),
   dismissUpdate: (version: string) => invoke('dismissUpdate', version),
+  startProxy: (config?: Partial<ProxyConfig>) => invoke('startProxy', config || {}),
+  stopProxy: () => invoke('stopProxy'),
+  getProxyStatus: () => invoke('getProxyStatus'),
+  setSystemProxy: (enable: boolean) => invoke('setSystemProxy', enable),
 
   onDownloadUpdated: (callback: (state: DownloadState) => void): (() => void) => {
     const listener = (_event: IpcRendererEvent, state: DownloadState): void => callback(state)
     ipcRenderer.on(IpcChannels.downloadUpdated, listener)
     return () => ipcRenderer.removeListener(IpcChannels.downloadUpdated, listener)
+  },
+
+  onProxyUpdated: (callback: (status: ProxyStatus) => void): (() => void) => {
+    const listener = (_event: IpcRendererEvent, status: ProxyStatus): void => callback(status)
+    ipcRenderer.on(IpcChannels.proxyUpdated, listener)
+    return () => ipcRenderer.removeListener(IpcChannels.proxyUpdated, listener)
   },
 
   onToggleDevToolsPanel: (callback: () => void): (() => void) => {

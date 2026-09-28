@@ -7,6 +7,7 @@ import { loadThemeSource } from './settings'
 import { testKnobs } from './testKnobs'
 import { IpcChannels } from '../shared/ipc-channels'
 import type { DownloadManager } from './download/downloadManager'
+import { proxyServerManager } from './proxy/proxyServer'
 
 // In dev mode the app runs as the raw `electron` binary, which otherwise shows "Electron" in
 // the Dock tooltip/menu bar — must be set before the app is ready. Packaged builds already get
@@ -120,10 +121,14 @@ app.whenReady().then(async () => {
 })
 
 app.on('before-quit', (event) => {
-  if (quitAfterSuspending || !downloadManager) return
+  if (quitAfterSuspending) return
 
   event.preventDefault()
-  void downloadManager.suspendAll().finally(() => {
+  const cleanupTasks = [
+    proxyServerManager.stop().catch(() => {}),
+    downloadManager ? downloadManager.suspendAll().catch(() => {}) : Promise.resolve()
+  ]
+  void Promise.all(cleanupTasks).finally(() => {
     quitAfterSuspending = true
     app.quit()
   })
